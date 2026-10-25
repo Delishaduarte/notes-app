@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}My notes · StudyVault{% endblock %}
+{% block content %}
+<div class="row" style="justify-content:space-between; margin-bottom:16px;">
+  <h2 style="margin:0">My notes</h2>
+  <a class="btn" href="{{ url_for('new_note') }}">+ New note</a>
+</div>
+
+<form class="card row" method="get">
+  <input name="q" value="{{ q }}" placeholder="Search title or content" style="flex:2; min-width:180px">
+  <select name="subject" style="flex:1; min-width:140px">
+    <option value="">All subjects</option>
+    {% for s in subjects %}<option {% if s == subject %}selected{% endif %}>{{ s }}</option>{% endfor %}
+  </select>
+  <button class="btn" type="submit">Search</button>
+</form>
+
+{% for n in notes %}
+  <div class="card note-item">
+    <h3><a href="{{ url_for('view_note', note_id=n.id) }}">{{ n.title }}</a></h3>
+    <div class="row muted">
+      {% if n.subject %}<span class="tag">{{ n.subject }}</span>{% endif %}
+      <span>{{ n.attachments|length }} file(s)</span>
+      <span>· updated {{ n.updated_at.strftime('%d %b %Y') }}</span>
+    </div>
+  </div>
+{% else %}
+  <div class="card muted">No notes yet. Click “New note” to add one.</div>
+{% endfor %}
+{% endblock %}

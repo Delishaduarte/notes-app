@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if note else 'New' }} note · StudyVault{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>{{ 'Edit note' if note else 'New note' }}</h2>
+  <form method="post">
+    <label>Title</label><input name="title" value="{{ note.title if note else '' }}" required>
+    <label>Subject (e.g. DBMS, Maths)</label><input name="subject" value="{{ note.subject if note else '' }}">
+    <label>Content</label><textarea name="content">{{ note.content if note else '' }}</textarea>
+    <p class="row">
+      <button class="btn" type="submit">Save</button>
+      <a class="btn ghost" href="{{ url_for('view_note', note_id=note.id) if note else url_for('notes') }}">Cancel</a>
+    </p>
+  </form>
+  {% if not note %}<p class="muted">You can attach files after saving the note.</p>{% endif %}
+</div>
+{% endblock %}

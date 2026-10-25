@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Log in · StudyVault{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h2>Log in</h2>
+  <form method="post">
+    <label>Email</label><input name="email" type="email" required>
+    <label>Password</label><input name="password" type="password" required>
+    <p><button class="btn" type="submit">Log in</button></p>
+  </form>
+  <p class="muted">New here? <a href="{{ url_for('register') }}">Create an account</a></p>
+</div>
+{% endblock %}

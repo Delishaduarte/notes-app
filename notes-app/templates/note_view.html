@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ note.title }} · StudyVault{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('notes') }}">← All notes</a></p>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between">
+    <h2 style="margin:0">{{ note.title }}</h2>
+    <div class="row">
+      <a class="btn ghost" href="{{ url_for('edit_note', note_id=note.id) }}">Edit</a>
+      <form class="inline" method="post" action="{{ url_for('delete_note', note_id=note.id) }}"
+            onsubmit="return confirm('Delete this note and all its files?')">
+        <button class="btn danger" type="submit">Delete</button>
+      </form>
+    </div>
+  </div>
+  {% if note.subject %}<p><span class="tag">{{ note.subject }}</span></p>{% endif %}
+  <div class="content">{{ note.content }}</div>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0">Attachments</h3>
+  {% if uploads_enabled %}
+    <div class="row">
+      <input type="file" id="file" style="flex:1">
+      <button class="btn" id="uploadBtn" type="button">Upload</button>
+    </div>
+    <p class="muted" id="status">Max {{ max_mb }} MB. Files go straight to Amazon S3.</p>
+  {% else %}
+    <p class="muted">Uploads are off until the S3 bucket is connected.</p>
+  {% endif %}
+
+  <ul class="files">
+    {% for a in note.attachments %}
+      <li>
+        <span>{{ a.filename }} <span class="muted">({{ a.size_bytes|size }})</span></span>
+        <span class="row">
+          <a class="btn ghost" href="{{ url_for('download_attachment', att_id=a.id) }}">Download</a>
+          <form class="inline" method="post" action="{{ url_for('delete_attachment', att_id=a.id) }}">
+            <button class="btn danger" type="submit">Remove</button>
+          </form>
+        </span>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+
+{% if uploads_enabled %}
+<script>
+document.getElementById('uploadBtn').addEventListener('click', async () => {
+  const file = document.getElementById('file').files[0];
+  const status = document.getElementById('status');
+  if (!file) { status.textContent = 'Choose a file first.'; return; }
+  if (file.size > {{ max_mb }} * 1024 * 1024) { status.textContent = 'File is too big.'; return; }
+  try {
+    status.textContent = 'Getting upload link…';
+    const r1 = await fetch('{{ url_for("upload_url", note_id=note.id) }}', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({filename: file.name})});
+    const p = await r1.json();
+    if (!r1.ok) throw new Error(p.error || 'Could not get upload link');
+
+    status.textContent = 'Uploading to S3…';
+    const form = new FormData();
+    Object.entries(p.fields).forEach(([k, v]) => form.append(k, v));
+    form.append('file', file);
+    const r2 = await fetch(p.url, {method: 'POST', body: form});
+    if (!r2.ok) throw new Error('S3 upload failed (' + r2.status + ')');
+
+    status.textContent = 'Saving…';
+    const r3 = await fetch('{{ url_for("save_attachment", note_id=note.id) }}', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({key: p.key, filename: p.filename})});
+    if (!r3.ok) throw new Error('Could not save file info');
+    location.reload();
+  } catch (e) { status.textContent = 'Error: ' + e.message; }
+});
+</script>
+{% endif %}
+{% endblock %}
