@@ -3,3 +3,4 @@ venv/
 *.db
 instance/
 __pycache__/
+*.pem
